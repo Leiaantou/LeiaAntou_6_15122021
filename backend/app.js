@@ -1,12 +1,11 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-
 const mongoose = require("mongoose");
+const helmet = require("helmet");
+const path = require("path");
+require("dotenv").config();
+
 const userRoutes = require("./routes/user");
 const sauceRoutes = require("./routes/sauce");
-const path = require("path");
-const app = express();
-require("dotenv").config();
 
 mongoose
   .connect(process.env.MONGO_DB_URL, {
@@ -16,6 +15,9 @@ mongoose
   .then(() => console.log("Connexion à MongoDB réussie !"))
   .catch(() => console.log("Connexion à MongoDB échouée !"));
 
+const app = express();
+
+app.use(helmet());
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -30,9 +32,8 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-app.use(bodyParser.json());
 
+app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/api/auth", userRoutes);
 app.use("/api/sauces", sauceRoutes);
-app.use("/images", express.static(path.join(__dirname, "images")));
 module.exports = app;

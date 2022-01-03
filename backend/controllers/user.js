@@ -12,7 +12,7 @@ schema
   .is()
   .min(8)
   .is()
-  .max(15)
+  .max(20)
   .has()
   .uppercase()
   .has()
@@ -33,7 +33,7 @@ exports.signup = (req, res, next) => {
   if (!schema.validate(req.body.password)) {
     return res.status(401).json({
       message:
-        "Le mot de passe ne doit pas contenir d'espace et doit avoir une longueur entre 8 et 15 caractères contenant au minimum 1 chiffre, 1 minuscule et 1 majuscule !",
+        "Le mot de passe ne doit pas contenir d'espace et doit avoir une longueur entre 8 et 20 caractères contenant au minimum 1 chiffre, 1 minuscule et 1 majuscule !",
     });
   }
 
@@ -62,9 +62,7 @@ exports.login = (req, res, next) => {
         .compare(req.body.password, user.password)
         .then((valid) => {
           if (!valid) {
-            return res
-              .status(401)
-              .json({ message: "Mot de passe incorrect !" });
+            return res.status(401).json({ error: "Mot de passe incorrect !" });
           }
           res.status(200).json({
             userId: user._id,
