@@ -1,6 +1,5 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const helmet = require("helmet");
 const path = require("path");
 require("dotenv").config();
 
@@ -17,7 +16,6 @@ mongoose
 
 const app = express();
 
-app.use(helmet());
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
