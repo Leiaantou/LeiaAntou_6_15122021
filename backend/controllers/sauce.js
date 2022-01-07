@@ -18,7 +18,6 @@ exports.getOneSauce = (req, res, next) => {
 // Créer Sauce
 exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce);
-  console.log(req.file.filename);
   delete sauceObject._id;
   const sauce = new Sauce({
     ...sauceObject,
@@ -27,8 +26,8 @@ exports.createSauce = (req, res, next) => {
     }`,
     likes: 0,
     dislikes: 0,
-    usersLiked: "",
-    usersDisliked: "",
+    usersLiked: [" "],
+    usersDisliked: [" "],
   });
   sauce
     .save()
@@ -40,19 +39,30 @@ exports.createSauce = (req, res, next) => {
 
 // Modifier Sauce
 exports.updateSauce = (req, res, next) => {
-  const sauceObject = req.file
-    ? {
-        ...JSON.parse(req.body.sauce),
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${
-          req.file.filename
-        }`,
+  Sauce.findOne({ _id: req.params.id })
+    .then((sauce) => {
+      if (sauce.userId !== req.auth.userId) {
+        res.status(403).json({ error: "Unauthorized request" });
+      } else if (sauce.userId == req.auth.userId) {
+        const filename = sauce.imageUrl.split("/images/")[1];
+        fs.unlink(`images/${filename}`, () => {
+          const sauceObject = req.file
+            ? {
+                ...JSON.parse(req.body.sauce),
+                imageUrl: `${req.protocol}://${req.get("host")}/images/${
+                  req.file.filename
+                }`,
+              }
+            : { ...req.body };
+          Sauce.updateOne(
+            { _id: req.params.id },
+            { ...sauceObject, _id: req.params.id }
+          )
+            .then(() => res.status(200).json({ message: "Sauce modifiée." }))
+            .catch((error) => res.status(400).json({ error }));
+        });
       }
-    : { ...req.body };
-  Sauce.updateOne(
-    { _id: req.params.id },
-    { ...sauceObject, _id: req.params.id }
-  )
-    .then(() => res.status(200).json({ message: "Sauce modifiée !" }))
+    })
     .catch((error) => res.status(400).json({ error }));
 };
 
@@ -60,12 +70,16 @@ exports.updateSauce = (req, res, next) => {
 exports.deleteSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
     .then((sauce) => {
-      const filename = sauce.imageUrl.split("/images/")[1];
-      fs.unlink(`images/${filename}`, () => {
-        Sauce.deleteOne({ _id: req.params.id })
-          .then(() => res.status(200).json({ message: "Sauce supprimée !" }))
-          .catch((error) => res.status(400).json({ error }));
-      });
+      if (sauce.userId !== req.auth.userId) {
+        res.status(403).json({ error: "Unauthorized request" });
+      } else if (sauce.userId == req.auth.userId) {
+        const filename = sauce.imageUrl.split("/images/")[1];
+        fs.unlink(`images/${filename}`, () => {
+          Sauce.deleteOne({ _id: req.params.id })
+            .then(() => res.status(200).json({ message: "Sauce supprimée !" }))
+            .catch((error) => res.status(400).json({ error }));
+        });
+      }
     })
     .catch((error) => res.status(500).json({ error }));
 };

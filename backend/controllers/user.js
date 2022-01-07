@@ -6,9 +6,9 @@ const User = require("../models/user");
 
 require("dotenv").config();
 
-const schema = new passwordValidator();
+const passwordSchema = new passwordValidator();
 
-schema
+passwordSchema
   .is()
   .min(8)
   .is()
@@ -30,13 +30,12 @@ exports.signup = (req, res, next) => {
       .json({ message: "Veuillez entrer une adresse email valide" });
   }
 
-  if (!schema.validate(req.body.password)) {
+  if (!passwordSchema.validate(req.body.password)) {
     return res.status(401).json({
       message:
         "Le mot de passe ne doit pas contenir d'espace et doit avoir une longueur entre 8 et 20 caractères contenant au minimum 1 chiffre, 1 minuscule et 1 majuscule !",
     });
   }
-
   bcrypt
     .hash(req.body.password, 10)
     .then((hash) => {
@@ -46,8 +45,10 @@ exports.signup = (req, res, next) => {
       });
       user
         .save()
-        .then(() => res.status(201).json({ message: "Utilisateur créé !" }))
-        .catch((error) => res.status(400).json({ error }));
+        .then(() => res.status(201).json({ message: "Utilisateur créé" }))
+        .catch((error) =>
+          res.status(400).json({ message: "Cet email est déjà utilisé !" })
+        );
     })
     .catch((error) => res.status(500).json({ error }));
 };
@@ -56,13 +57,13 @@ exports.login = (req, res, next) => {
   User.findOne({ email: req.body.email })
     .then((user) => {
       if (!user) {
-        return res.status(401).json({ message: "Utilisateur non trouvé !" });
+        return res.status(401).json({ message: "Utilisateur non trouvé" });
       }
       bcrypt
         .compare(req.body.password, user.password)
         .then((valid) => {
           if (!valid) {
-            return res.status(401).json({ error: "Mot de passe incorrect !" });
+            return res.status(401).json({ message: "Mot de passe incorrect" });
           }
           res.status(200).json({
             userId: user._id,
